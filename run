@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Create Docker image used to create build within
+export IMAGE_NAME=ubuntu_20_yocto_acrn
+if [ -z $(docker images -q $IMAGE_NAME) ]; then
+   echo "Building image ..."
+   docker build -t $IMAGE_NAME docker	
+fi
+
+# Build workspace
+export RUN_ARGS="--rm -it -v `pwd`:`pwd` -e CI_SOURCE_PATH=`pwd` -t $IMAGE_NAME"
+docker run $RUN_ARGS /bin/bash -c 'cd $CI_SOURCE_PATH; ./_build.bash'
