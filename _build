@@ -1,0 +1,50 @@
+#!/bin/bash
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8;
+export SRC=$CI_SOURCE_PATH/src
+
+REPOS=(
+    "https://git.yoctoproject.org/git/poky,nanbield"
+    "https://github.com/openembedded/meta-openembedded,nanbield"
+    "https://git.yoctoproject.org/git/meta-virtualization,nanbield"
+    "https://git.yoctoproject.org/git/meta-intel,nanbield"
+    "https://github.com/intel/meta-acrn,1.7-nanbield-4.3"
+)
+
+if [ ! -d "$SRC" ]; then
+  mkdir $SRC
+  cd $SRC
+
+  for item in "${REPOS[@]}"
+  do
+    item_repo=$(echo "${item}"|awk -F "," '{print $1}')
+    item_ver=$(echo "${item}"|awk -F "," '{print $2}')
+    git clone "${item_repo}"
+    pushd "${item_repo##*/}"
+    git checkout "${item_ver}"
+    popd
+  done
+fi
+
+if [ ! -d "$SRC"/build ]; then
+  cd $SRC
+  source poky/oe-init-build-env
+
+  bitbake-layers add-layer ../meta-openembedded/meta-oe
+  bitbake-layers add-layer ../meta-openembedded/meta-python
+  bitbake-layers add-layer ../meta-openembedded/meta-networking
+  bitbake-layers add-layer ../meta-openembedded/meta-filesystems
+  bitbake-layers add-layer ../meta-virtualization
+  bitbake-layers add-layer ../meta-intel
+  bitbake-layers add-layer ../meta-acrn
+
+  cat ../../_local.conf >> conf/local.conf
+  mkdir -p conf/multiconfig
+  cp ../../_uos.conf conf/multiconfig/uos.conf
+fi
+
+cd $SRC
+source poky/oe-init-build-env
+bitbake acrn-image-base
+bitbake acrn-image-base -c populate_sdk

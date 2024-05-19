@@ -8,5 +8,4 @@ if [ -z $(docker images -q $IMAGE_NAME) ]; then
 fi
 
 # Build workspace
-export RUN_ARGS="--rm -it -v `pwd`:`pwd` -e CI_SOURCE_PATH=`pwd` -t $IMAGE_NAME"
-docker run $RUN_ARGS /bin/bash -c 'cd $CI_SOURCE_PATH; ./_build.bash'
+docker run --rm -it -v `pwd`:`pwd` -w `pwd` -e CI_SOURCE_PATH=`pwd` -t $IMAGE_NAME /bin/bash _build
