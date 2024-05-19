@@ -5,16 +5,30 @@ export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8;
 export SRC=$CI_SOURCE_PATH/src
 
+REPOS=(
+    "https://git.yoctoproject.org/git/poky,nanbield"
+    "https://github.com/openembedded/meta-openembedded,nanbield"
+    "https://git.yoctoproject.org/git/meta-virtualization,nanbield"
+    "https://git.yoctoproject.org/git/meta-intel,nanbield"
+    "https://github.com/intel/meta-acrn,1.7-nanbield-4.3"
+)
+
 if [ ! -d "$SRC" ]; then
   mkdir $SRC
   cd $SRC
-  git clone https://git.yoctoproject.org/git/poky
-  git clone https://github.com/openembedded/meta-openembedded.git
-  git clone https://git.yoctoproject.org/git/meta-virtualization
-  git clone https://git.yoctoproject.org/git/meta-intel
-  git clone https://github.com/intel/meta-acrn.git
+
+  for item in "${REPOS[@]}"
+  do
+    item_repo=$(echo "${item}"|awk -F "," '{print $1}')
+    item_ver=$(echo "${item}"|awk -F "," '{print $2}')
+    git clone "${item_repo}"
+    pushd "${item_repo##*/}"
+    git checkout "${item_ver}"
+    popd
+  done
 
   source poky/oe-init-build-env
+
   bitbake-layers add-layer ../meta-openembedded/meta-oe
   bitbake-layers add-layer ../meta-openembedded/meta-python
   bitbake-layers add-layer ../meta-openembedded/meta-networking
@@ -24,7 +38,7 @@ if [ ! -d "$SRC" ]; then
   bitbake-layers add-layer ../meta-acrn
 
   cat <<EOF >> conf/local.conf 
-MACHINE = "intel-skylake-64"
+MACHINE = "intel-corei7-64"
 TMPDIR = "\${TOPDIR}/master-acrn-sos"
 DISTRO = "acrn-demo-service-vm"
 
